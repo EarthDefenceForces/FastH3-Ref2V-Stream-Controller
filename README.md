@@ -36,7 +36,7 @@ The add-on archive contains every small source file introduced by this project:
 | File | Purpose |
 | --- | --- |
 | `stream_h3_r2v_continuity.py` | Generator, queue, control API, stream and audio mixer |
-| `start_h3_r2v_continuity.ps1` | Portable-Python launcher and custom-node installer |
+| `start_h3_r2v_continuity.ps1` | Desktop/Portable launcher and custom-node installer |
 | `MiniMaxH3_R2V_4step_5s.json` | Tested Ref2V workflow template |
 | `custom_nodes/h3_r2v_fixed/` | Fixed image sockets for reliable API submission |
 | `check_sageattention.ps1` | SageAttention compatibility check |
@@ -60,6 +60,17 @@ are present in the merged folder. Model weights and media are never included.
 
 ## License warning
 
+The controller source, its custom node, workflow template, and project
+documentation are intended to be distributed under the **GNU General Public
+License v3.0 only (GPL-3.0-only)**. Add GitHub's `GNU General Public License
+v3.0` template as the repository's root `LICENSE` file. Recipients may use,
+study, modify, redistribute, and use the code commercially, but distributed
+modified versions must remain under the GPL and include source code.
+
+This project license covers only files you own in this add-on. It does not
+relicense MiniMax models, upstream FastH3 files, music, character references,
+or any other third-party assets.
+
 The upstream FastH3 dataset is gated and its page currently states that its
 model derivative is subject to the MiniMax H3 Community License, including
 territory restrictions. Review and accept the current upstream terms yourself
@@ -72,34 +83,49 @@ This controller does not bypass the gate and does not download weights.
 ## Requirements
 
 - Windows 10/11
-- ComfyUI Portable with a recent MiniMax H3 implementation
+- Comfy Desktop or ComfyUI Portable with a recent MiniMax H3 implementation
 - NVIDIA GPU with enough VRAM for the chosen model and resolution
-- Python supplied by ComfyUI Portable
+- Python supplied by ComfyUI
 - FFmpeg build containing `rubberband`, plus FFprobe
 - The downloaded `jacokon/fasth3-live` repository
 
-The default paths assume:
+The launcher detects both current Comfy Desktop defaults and the established
+ComfyUI Portable layout automatically. Current Comfy Desktop normally uses:
 
 ```text
-D:\KI\ComfyUI_windows_portable\
-├── python_embeded\python.exe
-├── ComfyUI\
-│   ├── custom_nodes\
-│   ├── input\
-│   ├── output\
-│   └── models\
-└── fasth3-live\
+%LOCALAPPDATA%\Comfy-Desktop\
+├── ComfyUI-Installs\
+│   └── <installation>\
+│       ├── .venv\Scripts\python.exe
+│       └── ComfyUI\custom_nodes\
+└── ComfyUI-Shared\
+    ├── input\
+    ├── output\
+    └── models\
 ```
 
-Other portable locations work as long as `fasth3-live` is directly beside the
-`ComfyUI` and `python_embeded` directories.
+Portable is still detected when `fasth3-live` is directly beside the `ComfyUI`
+and `python_embeded` directories. The project folder itself may live anywhere
+with Comfy Desktop; `prompts_scenes.txt` and `character_refs` default to files
+beside the controller script.
+
+For a custom installation or to select one of several Desktop installations,
+set these variables before starting:
+
+```powershell
+$env:COMFYUI_ROOT = "$env:LOCALAPPDATA\Comfy-Desktop\ComfyUI-Installs\<installation>\ComfyUI"
+$env:COMFYUI_DATA_ROOT = "$env:LOCALAPPDATA\Comfy-Desktop\ComfyUI-Shared"
+$env:COMFYUI_PYTHON = "$env:LOCALAPPDATA\Comfy-Desktop\ComfyUI-Installs\<installation>\.venv\Scripts\python.exe"
+```
 
 ## Required models
 
-Place these files in the standard ComfyUI model folders:
+Place these files in the standard ComfyUI model folders. For current Comfy
+Desktop that base is `%LOCALAPPDATA%\Comfy-Desktop\ComfyUI-Shared\models`;
+Portable uses `ComfyUI\models`:
 
 ```text
-ComfyUI\models\
+<ComfyUI data>\models\
 ├── diffusion_models\
 │   └── minimax_h3_ref2va_pruned_int8_convrot.safetensors
 ├── text_encoders\
@@ -116,7 +142,8 @@ text-to-video stream. Model filenames can be overridden through CLI options.
 
 ## Installation
 
-1. Download and extract the complete gated `jacokon/fasth3-live` repository.
+1. Download and extract the complete gated `jacokon/fasth3-live` repository
+   into any writable folder.
 2. Extract this add-on and copy the **contents** of `h3-r2v-continuity` into the
    existing `fasth3-live` directory. Keep all upstream files.
 3. Install FFmpeg if it is not already available:
@@ -137,7 +164,7 @@ text-to-video stream. Model filenames can be overridden through CLI options.
 
    ```powershell
    powershell.exe -NoProfile -ExecutionPolicy Bypass `
-     -File "D:\KI\ComfyUI_windows_portable\fasth3-live\start_h3_r2v_continuity.ps1"
+     -File "C:\path\to\fasth3-live\start_h3_r2v_continuity.ps1"
    ```
 
 7. If the launcher installs or updates custom nodes, restart ComfyUI completely
@@ -148,6 +175,10 @@ The launcher installs these nodes when their source directories exist:
 - `h3_r2v_fixed` from this add-on;
 - `h3_fast_writer` from the upstream repository;
 - `h3_block_attention` from upstream, when available.
+
+At startup it prints the detected ComfyUI core, shared data directory and
+Python executable. Comfy Desktop's current LocalAppData locations, its older
+home-directory layout, and the portable layout are supported.
 
 ## Open the interfaces
 
@@ -364,7 +395,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 ```
 
 SageAttention is optional. Install only a wheel matching the exact Python,
-PyTorch, CUDA, and Windows ABI of the ComfyUI Portable build. A failed or absent
+PyTorch, CUDA, and Windows ABI of the active ComfyUI environment. A failed or absent
 Sage installation falls back safely.
 
 ## Useful command-line options

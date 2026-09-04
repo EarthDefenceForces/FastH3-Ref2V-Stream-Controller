@@ -21,7 +21,7 @@ Das ZIP enthält alle kleinen, von diesem Zusatzprojekt benötigten Dateien:
 | Datei | Aufgabe |
 | --- | --- |
 | `stream_h3_r2v_continuity.py` | Generator, Warteschlangen, Control API, Stream und Audiomischer |
-| `start_h3_r2v_continuity.ps1` | Starter für Portable Python und Custom-Node-Installation |
+| `start_h3_r2v_continuity.ps1` | Starter mit Desktop-/Portable-Erkennung und Custom-Node-Installation |
 | `MiniMaxH3_R2V_4step_5s.json` | getestete Ref2V-Workflowvorlage |
 | `custom_nodes/h3_r2v_fixed/` | feste Bild-Sockets für zuverlässige API-Prompts |
 | `check_sageattention.ps1` | SageAttention-Kompatibilitätstest |
@@ -42,14 +42,38 @@ gelegt. Das Upstream-Repository ist zugriffsbeschränkt und nennt Lizenz- sowie
 Gebietsbeschränkungen. Prüfe die jeweils aktuellen Bedingungen selbst und
 veröffentliche keine Modellgewichte oder fremden Medien mit deinem GitHub-Repo.
 
+Für den eigenen Controller-Code, Custom Node, Workflow und die Dokumentation
+ist **GNU General Public License v3.0 only (GPL-3.0-only)** vorgesehen. Wähle
+beim Anlegen des GitHub-Repositories deshalb **GNU General Public License
+v3.0**. Sie erlaubt Nutzung, Änderung, Weitergabe und kommerzielle Verwendung;
+öffentlich weitergegebene Änderungen müssen ebenfalls unter GPL verfügbar
+bleiben und den Quellcode enthalten.
+
+Diese Projektlizenz gilt nur für die Dateien, an denen du die Rechte besitzt.
+Sie lizenziert MiniMax-Modelle, Upstream-Dateien, Musik, Charakterbilder und
+andere Inhalte Dritter nicht neu.
+
 ## Installation
 
-Entpacke das ZIP und kopiere **den Inhalt** des Ordners
-`h3-r2v-continuity` nach:
+Unter Windows erkennt der Starter sowohl die aktuelle Comfy-Desktop-Struktur
+als auch ComfyUI Portable automatisch. Comfy Desktop verwendet standardmäßig:
 
 ```text
-D:\KI\ComfyUI_windows_portable\fasth3-live\
+%LOCALAPPDATA%\Comfy-Desktop\
+├── ComfyUI-Installs\
+│   └── <Installation>\
+│       ├── .venv\Scripts\python.exe
+│       └── ComfyUI\custom_nodes\
+└── ComfyUI-Shared\
+    ├── input\
+    ├── output\
+    └── models\
 ```
+
+Entpacke das vollständige Upstream-Repository in einen beliebigen
+beschreibbaren Ordner. Kopiere anschließend den **Inhalt** dieses Zusatzprojekts
+in dessen `fasth3-live`-Ordner. `prompts_scenes.txt` und `character_refs`
+werden standardmäßig neben dem Controller-Script gesucht.
 
 Die vorhandenen Dateien des ursprünglichen Repositories müssen dort bleiben:
 
@@ -60,14 +84,28 @@ h3_characters.json
 character_refs\
 ```
 
-Benötigte Modelle aus deinem funktionierenden Speedtest:
+Portable wird weiterhin erkannt, wenn `fasth3-live` direkt neben `ComfyUI` und
+`python_embeded` liegt. Bei einem eigenen Installationsort oder mehreren
+Desktop-Installationen können die Pfade vor dem Start ausdrücklich gesetzt
+werden:
+
+```powershell
+$env:COMFYUI_ROOT = "$env:LOCALAPPDATA\Comfy-Desktop\ComfyUI-Installs\<Installation>\ComfyUI"
+$env:COMFYUI_DATA_ROOT = "$env:LOCALAPPDATA\Comfy-Desktop\ComfyUI-Shared"
+$env:COMFYUI_PYTHON = "$env:LOCALAPPDATA\Comfy-Desktop\ComfyUI-Installs\<Installation>\.venv\Scripts\python.exe"
+```
+
+Benötigte Modelle aus deinem funktionierenden Speedtest. Bei der aktuellen
+Desktop-Version ist der Basisordner normalerweise
+`%LOCALAPPDATA%\Comfy-Desktop\ComfyUI-Shared\models`; Portable verwendet
+`ComfyUI\models`:
 
 ```text
-ComfyUI\models\diffusion_models\minimax_h3_ref2va_pruned_int8_convrot.safetensors
-ComfyUI\models\text_encoders\qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors
-ComfyUI\models\vae\minimax_h3_video_vae_fp16.safetensors
-ComfyUI\models\vae\minimax_h3_audio_vae_fp32.safetensors
-ComfyUI\models\loras\minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors
+<ComfyUI-Daten>\models\diffusion_models\minimax_h3_ref2va_pruned_int8_convrot.safetensors
+<ComfyUI-Daten>\models\text_encoders\qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors
+<ComfyUI-Daten>\models\vae\minimax_h3_video_vae_fp16.safetensors
+<ComfyUI-Daten>\models\vae\minimax_h3_audio_vae_fp32.safetensors
+<ComfyUI-Daten>\models\loras\minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors
 ```
 
 ## Erster Start
@@ -76,7 +114,7 @@ PowerShell blockiert lokale Skripte auf deinem System. Verwende deshalb:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
-  -File "D:\KI\ComfyUI_windows_portable\fasth3-live\start_h3_r2v_continuity.ps1"
+  -File "C:\Pfad\zu\fasth3-live\start_h3_r2v_continuity.ps1"
 ```
 
 Beim ersten Aufruf installiert beziehungsweise synchronisiert das Startscript
@@ -87,6 +125,10 @@ vorhanden sind – die Upstream-Nodes `h3_fast_writer` und
 1. ComfyUI vollständig beenden;
 2. ComfyUI erneut starten;
 3. denselben PowerShell-Befehl erneut ausführen.
+
+Beim Start werden der erkannte ComfyUI-Core-Ordner, der Datenordner und die
+verwendete Python-Datei angezeigt. Unterstützt werden die aktuellen
+LocalAppData-Pfade von Comfy Desktop, die ältere Desktop-Struktur und Portable.
 
 Anschließend öffnen:
 

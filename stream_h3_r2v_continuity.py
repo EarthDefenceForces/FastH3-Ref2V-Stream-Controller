@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: Apache-2.0
+# SPDX-License-Identifier: GPL-3.0-only
 """Continuous MiniMax H3 Ref2V stream with configurable story clips.
 
 Generation is slower than playback at 24 fps, so the stream is retimed on the
@@ -626,7 +626,7 @@ h2{font-size:16px;margin:0 0 14px}label{display:block;color:var(--muted);font-si
  </section>
  <section class="card"><h2 data-i18n="audioTitle">Audio & music bed</h2>
   <label><input id="externalMusic" type="checkbox" style="width:auto;margin-right:8px"><span data-i18n="mixMusic">Mix continuous external music</span></label>
-  <label for="musicPath" data-i18n="musicSource">Music file or folder</label><input id="musicPath" placeholder="D:\Music or D:\Music\soundtrack.mp3">
+  <label for="musicPath" data-i18n="musicSource">Music file or folder</label><input id="musicPath" placeholder="%USERPROFILE%\Music or %USERPROFILE%\Music\soundtrack.mp3">
   <label for="musicPlayMode" data-i18n="musicOrder">Folder playback</label><select id="musicPlayMode"><option value="ordered" data-i18n="ordered">In order</option><option value="random" data-i18n="random">Random</option></select>
   <div class="row"><div><label for="musicVolume" data-i18n="musicVolume">Music volume</label><input id="musicVolume" type="number" min="0" max="2" step="0.05"></div><div><label for="h3Volume" data-i18n="h3Volume">H3 audio volume</label><input id="h3Volume" type="number" min="0" max="2" step="0.05"></div></div>
   <label><input id="musicDucking" type="checkbox" style="width:auto;margin-right:8px"><span data-i18n="ducking">Lower music while H3 audio is active</span></label>
@@ -2090,13 +2090,53 @@ def script_dir() -> str:
     return os.path.dirname(os.path.abspath(__file__))
 
 
-def portable_comfy_input() -> str:
-    """Best-effort default for repo beside ComfyUI in a portable install."""
-    return os.path.join(os.path.dirname(script_dir()), "ComfyUI", "input")
+def default_comfy_data_root() -> str:
+    """Find ComfyUI's input/output root for Desktop or Portable installs.
+
+    The launcher passes explicit paths, so this primarily covers users who run
+    the Python file directly. Current Comfy Desktop stores shared input/output
+    data below LocalAppData; older Desktop versions used a home-directory
+    ComfyUI-Shared folder. A repository merged into the Windows portable build
+    continues to use the adjacent ComfyUI directory.
+    """
+    override = os.environ.get("COMFYUI_DATA_ROOT", "").strip()
+    if override:
+        return os.path.abspath(os.path.expandvars(os.path.expanduser(override)))
+
+    adjacent_portable = os.path.join(os.path.dirname(script_dir()), "ComfyUI")
+    candidates = [adjacent_portable]
+
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if local_app_data:
+        candidates.append(os.path.join(
+            local_app_data, "Comfy-Desktop", "ComfyUI-Shared"))
+
+    user_profile = os.environ.get("USERPROFILE") or os.path.expanduser("~")
+    if user_profile:
+        candidates.extend([
+            os.path.join(user_profile, "ComfyUI-Shared"),
+            os.path.join(user_profile, "Documents", "ComfyUI"),
+        ])
+
+    for candidate in candidates:
+        if os.path.isdir(candidate):
+            return os.path.abspath(candidate)
+
+    # On a fresh Windows Desktop installation the folder may not exist until
+    # ComfyUI has launched once. Return the current official default so a later
+    # error names the useful path rather than an unrelated working directory.
+    if local_app_data:
+        return os.path.abspath(os.path.join(
+            local_app_data, "Comfy-Desktop", "ComfyUI-Shared"))
+    return os.path.abspath(adjacent_portable)
 
 
-def portable_comfy_output() -> str:
-    return os.path.join(os.path.dirname(script_dir()), "ComfyUI", "output")
+def default_comfy_input() -> str:
+    return os.path.join(default_comfy_data_root(), "input")
+
+
+def default_comfy_output() -> str:
+    return os.path.join(default_comfy_data_root(), "output")
 
 
 def resolve_ffmpeg(value: str) -> str:
@@ -2110,7 +2150,7 @@ def resolve_ffmpeg(value: str) -> str:
     raise SystemExit(
         f"FFmpeg nicht gefunden: {candidate!r}. Installiere es mit "
         "'winget install -e --id Gyan.FFmpeg', öffne PowerShell neu, "
-        "oder übergib --ffmpeg D:\\...\\ffmpeg.exe"
+        "oder übergib --ffmpeg <vollstaendiger-pfad>\\ffmpeg.exe"
     )
 
 def main() -> None:
@@ -2136,9 +2176,9 @@ def main() -> None:
                    help="ffmpeg executable or absolute path")
     p.add_argument("--ref-image-size", default="match", choices=["match", "max"],
                    help="R2V reference image sizing; max improves identity but is slower")
-    p.add_argument("--comfy-input", default=portable_comfy_input(),
+    p.add_argument("--comfy-input", default=default_comfy_input(),
                    help="ComfyUI input directory; references are copied here before submission")
-    p.add_argument("--comfy-output", default=portable_comfy_output(),
+    p.add_argument("--comfy-output", default=default_comfy_output(),
                    help="ComfyUI output directory used to collect generated clips")
     p.add_argument("--curated-share", type=float, default=0.30,
                    help="fraction of draws taken from the high-recognition pool")
